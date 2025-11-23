@@ -19,76 +19,40 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AddCategoryDialog } from "@/components/custom/dialog/AddCategoryDialog";
-
-const categoriesData = [
-  { 
-    id: 1, 
-    name: "Faith & Belief", 
-    slug: "faith-belief",
-    lectureCount: 124, 
-    totalViews: "856K",
-    color: "bg-blue-500/20 text-blue-500",
-    status: "Active"
-  },
-  { 
-    id: 2, 
-    name: "Quran Studies", 
-    slug: "quran-studies",
-    lectureCount: 98, 
-    totalViews: "672K",
-    color: "bg-green-500/20 text-green-500",
-    status: "Active"
-  },
-  { 
-    id: 3, 
-    name: "Islamic History", 
-    slug: "islamic-history",
-    lectureCount: 76, 
-    totalViews: "534K",
-    color: "bg-purple-500/20 text-purple-500",
-    status: "Active"
-  },
-  { 
-    id: 4, 
-    name: "Family & Society", 
-    slug: "family-society",
-    lectureCount: 89, 
-    totalViews: "612K",
-    color: "bg-orange-500/20 text-orange-500",
-    status: "Active"
-  },
-  { 
-    id: 5, 
-    name: "Ramadan", 
-    slug: "ramadan",
-    lectureCount: 145, 
-    totalViews: "1.2M",
-    color: "bg-teal-500/20 text-teal-500",
-    status: "Active"
-  },
-  { 
-    id: 6, 
-    name: "Prayer & Worship", 
-    slug: "prayer-worship",
-    lectureCount: 67, 
-    totalViews: "445K",
-    color: "bg-pink-500/20 text-pink-500",
-    status: "Active"
-  },
-  { 
-    id: 7, 
-    name: "Spiritual Growth", 
-    slug: "spiritual-growth",
-    lectureCount: 52, 
-    totalViews: "389K",
-    color: "bg-indigo-500/20 text-indigo-500",
-    status: "Inactive"
-  },
-];
+import { CategoryDialog } from "@/components/custom/dialog/AddCategoryDialog";
+import { DeleteCategoryDialog } from "@/components/custom/dialog/DeleteCategoryDialog";
+import { useCategories } from "@/hooks/useCategories";
+import { Category } from "@/services/category.service";
 
 export default function Categories() {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  
+  const { data: categories, isLoading, error } = useCategories();
+
+  const handleAdd = () => {
+    setSelectedCategory(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEdit = (category: Category) => {
+    setSelectedCategory(category);
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = (category: Category) => {
+    setSelectedCategory(category);
+    setIsDeleteDialogOpen(true);
+  };
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Loading categories...</div>;
+  }
+
+  if (error) {
+    return <div className="p-8 text-center text-destructive">Failed to load categories</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -98,7 +62,7 @@ export default function Categories() {
           <p className="text-muted-foreground">Organize your content with categories</p>
         </div>
         <Button 
-          onClick={() => setIsAddDialogOpen(true)}
+          onClick={handleAdd}
           className="bg-primary hover:bg-primary/90 text-primary-foreground"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -106,7 +70,17 @@ export default function Categories() {
         </Button>
       </div>
 
-      <AddCategoryDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} />
+      <CategoryDialog 
+        open={isDialogOpen} 
+        onOpenChange={setIsDialogOpen} 
+        category={selectedCategory}
+      />
+
+      <DeleteCategoryDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        category={selectedCategory}
+      />
 
       <Card className="bg-card border-border">
         <CardHeader>
@@ -133,18 +107,18 @@ export default function Categories() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {categoriesData.map((category) => (
+              {categories?.map((category) => (
                 <TableRow key={category.id} className="border-border hover:bg-secondary/50">
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={category.color}>
+                      
                         {category.name}
-                      </Badge>
+                   
                     </div>
                   </TableCell>
                   <TableCell className="text-foreground font-mono text-sm">{category.slug}</TableCell>
-                  <TableCell className="text-foreground">{category.lectureCount}</TableCell>
-                  <TableCell className="text-foreground">{category.totalViews}</TableCell>
+                  <TableCell className="text-foreground">{category.lectureCount || 0}</TableCell>
+                  <TableCell className="text-foreground">{category.totalViews || "0"}</TableCell>
                   <TableCell>
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -153,7 +127,7 @@ export default function Categories() {
                           : "bg-muted text-muted-foreground"
                       }`}
                     >
-                      {category.status}
+                      {category.status || "Active"}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -164,11 +138,17 @@ export default function Categories() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="bg-popover border-border">
-                        <DropdownMenuItem className="text-foreground hover:bg-secondary cursor-pointer">
+                        <DropdownMenuItem 
+                          className="text-foreground hover:bg-secondary cursor-pointer"
+                          onClick={() => handleEdit(category)}
+                        >
                           <Edit className="h-4 w-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive hover:bg-destructive/10 cursor-pointer">
+                        <DropdownMenuItem 
+                          className="text-destructive hover:bg-destructive/10 cursor-pointer"
+                          onClick={() => handleDelete(category)}
+                        >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Delete
                         </DropdownMenuItem>

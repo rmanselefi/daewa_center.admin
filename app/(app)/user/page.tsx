@@ -1,7 +1,17 @@
+"use client";
+import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, MoreVertical, UserCheck, UserX } from "lucide-react";
+import {
+  Search,
+  MoreVertical,
+  UserCheck,
+  UserX,
+  Plus,
+  Edit,
+  Trash2,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,24 +27,76 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-
-const usersData = [
-  { id: 1, name: "Ahmed Hassan", email: "ahmed.hassan@email.com", role: "Admin", status: "Active", joined: "2023-12-01" },
-  { id: 2, name: "Fatima Ali", email: "fatima.ali@email.com", role: "User", status: "Active", joined: "2024-01-05" },
-  { id: 3, name: "Omar Ibrahim", email: "omar.ibrahim@email.com", role: "Moderator", status: "Active", joined: "2024-01-10" },
-  { id: 4, name: "Aisha Mohammed", email: "aisha.mohammed@email.com", role: "User", status: "Inactive", joined: "2024-01-12" },
-  { id: 5, name: "Yusuf Abdullah", email: "yusuf.abdullah@email.com", role: "User", status: "Active", joined: "2024-01-15" },
-];
+import { UserDialog } from "@/components/custom/dialog/UserDialog";
+import { DeleteUserDialog } from "@/components/custom/dialog/DeleteUserDialog";
+import { useUsers } from "@/hooks/useUsers";
+import { User } from "@/services/user.service";
 
 export default function Users() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  const { data: users, isLoading, error } = useUsers();
+
+  const handleAdd = () => {
+    setSelectedUser(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEdit = (user: User) => {
+    setSelectedUser(user);
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = (user: User) => {
+    setSelectedUser(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Loading users...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-center text-destructive">
+        Failed to load users
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">User Management</h1>
-          <p className="text-muted-foreground">Manage platform users and their roles</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            User Management
+          </h1>
+          <p className="text-muted-foreground">
+            Manage platform users and their roles
+          </p>
         </div>
+        <Button
+          onClick={handleAdd}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add User
+        </Button>
       </div>
+
+      <UserDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        user={selectedUser}
+      />
+
+      <DeleteUserDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        user={selectedUser}
+      />
 
       <Card className="bg-card border-border">
         <CardHeader>
@@ -61,19 +123,29 @@ export default function Users() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {usersData.map((user) => (
-                <TableRow key={user.id} className="border-border hover:bg-secondary/50">
+              {users?.map((user) => (
+                <TableRow
+                  key={user.id}
+                  className="border-border hover:bg-secondary/50"
+                >
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8 bg-primary/20">
                         <AvatarFallback className="text-primary text-sm">
-                          {user.name.split(' ').map(n => n[0]).join('')}
+                          {user.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="font-medium text-foreground">{user.name}</span>
+                      <span className="font-medium text-foreground">
+                        {user.name}
+                      </span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-foreground">{user.email}</TableCell>
+                  <TableCell className="text-foreground">
+                    {user.email}
+                  </TableCell>
                   <TableCell>
                     <span className="px-2 py-1 rounded-full text-xs font-medium bg-secondary text-foreground">
                       {user.role}
@@ -95,7 +167,9 @@ export default function Users() {
                       {user.status}
                     </span>
                   </TableCell>
-                  <TableCell className="text-foreground">{user.joined}</TableCell>
+                  <TableCell className="text-foreground">
+                    {user.joined || user.createdAt || "-"}
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -103,15 +177,23 @@ export default function Users() {
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-popover border-border">
-                        <DropdownMenuItem className="text-foreground hover:bg-secondary cursor-pointer">
-                          View Profile
+                      <DropdownMenuContent
+                        align="end"
+                        className="bg-popover border-border"
+                      >
+                        <DropdownMenuItem
+                          className="text-foreground hover:bg-secondary cursor-pointer"
+                          onClick={() => handleEdit(user)}
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-foreground hover:bg-secondary cursor-pointer">
-                          Change Role
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive hover:bg-destructive/10 cursor-pointer">
-                          Suspend User
+                        <DropdownMenuItem
+                          className="text-destructive hover:bg-destructive/10 cursor-pointer"
+                          onClick={() => handleDelete(user)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

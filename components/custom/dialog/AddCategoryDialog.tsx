@@ -1,8 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { useCreateCategory, useUpdateCategory } from "@/hooks/useCategories";
+import { Category } from "@/services/category.service";
 import {
   Dialog,
   DialogContent,
@@ -28,18 +30,22 @@ const categorySchema = z.object({
   slug: z.string().trim().min(1, "Slug is required").max(50, "Slug must be less than 50 characters")
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase with hyphens only"),
   description: z.string().trim().max(200, "Description must be less than 200 characters").optional(),
-  color: z.string().regex(/^#[0-9A-F]{6}$/i, "Invalid color format").optional().or(z.literal("")),
 });
 
 type CategoryFormValues = z.infer<typeof categorySchema>;
 
-interface AddCategoryDialogProps {
+interface CategoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  category?: Category | null;
 }
 
-export function AddCategoryDialog({ open, onOpenChange }: AddCategoryDialogProps) {
-  const [isLoading, setIsLoading] = useState(false);
+export function CategoryDialog({ open, onOpenChange, category }: CategoryDialogProps) {
+  const { mutate: createCategory, isPending: isCreating } = useCreateCategory();
+  const { mutate: updateCategory, isPending: isUpdating } = useUpdateCategory();
+  
+  const isPending = isCreating || isUpdating;
+  const isEditMode = !!category;
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
@@ -47,33 +53,55 @@ export function AddCategoryDialog({ open, onOpenChange }: AddCategoryDialogProps
       name: "",
       slug: "",
       description: "",
-      color: "#5DD8C1",
     },
   });
 
+  useEffect(() => {
+    if (open) {
+      if (category) {
+        form.reset({
+          name: category.name,
+          slug: category.slug,
+          description: category.description || "",
+        });
+      } else {
+        form.reset({
+          name: "",
+          slug: "",
+          description: "",
+        });
+      }
+    }
+  }, [open, category, form]);
+
   // Auto-generate slug from name
   const handleNameChange = (name: string) => {
-    const slug = name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-");
-    form.setValue("slug", slug);
+    if (!isEditMode) { // Only auto-generate in create mode
+      const slug = name
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
+      form.setValue("slug", slug);
+    }
   };
 
-  const onSubmit = async (data: CategoryFormValues) => {
-    setIsLoading(true);
-    try {
-      // TODO: Implement actual API call to save category
-      console.log("Category data:", data);
-      toast.success("Category added successfully");
-      form.reset();
-      onOpenChange(false);
-    } catch (error) {
-      toast.error("Failed to add category");
-    } finally {
-      setIsLoading(false);
+  const onSubmit = (data: CategoryFormValues) => {
+    if (isEditMode && category) {
+      updateCategory({ id: category.id, data }, {
+        onSuccess: () => {
+          form.reset();
+          onOpenChange(false);
+        },
+      });
+    } else {
+      createCategory(data, {
+        onSuccess: () => {
+          form.reset();
+          onOpenChange(false);
+        },
+      });
     }
   };
 
@@ -81,9 +109,9 @@ export function AddCategoryDialog({ open, onOpenChange }: AddCategoryDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] bg-card border-border">
         <DialogHeader>
-          <DialogTitle className="text-foreground">Add New Category</DialogTitle>
+          <DialogTitle className="text-foreground">{isEditMode ? "Edit Category" : "Add New Category"}</DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Create a new category to organize your content.
+            {isEditMode ? "Update category details." : "Create a new category to organize your content."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -144,47 +172,23 @@ export function AddCategoryDialog({ open, onOpenChange }: AddCategoryDialogProps
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="color"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-foreground">Color</FormLabel>
-                  <FormControl>
-                    <div className="flex gap-2">
-                      <Input 
-                        type="color"
-                        className="w-20 h-10 p-1 bg-background border-border cursor-pointer"
-                        {...field} 
-                      />
-                      <Input 
-                        type="text"
-                        placeholder="#5DD8C1" 
-                        className="flex-1 bg-background border-border text-foreground font-mono"
-                        {...field} 
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
             <div className="flex justify-end gap-3 pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={isLoading}
+                disabled={isPending}
                 className="border-border"
               >
                 Cancel
               </Button>
               <Button 
                 type="submit" 
-                disabled={isLoading}
+                disabled={isPending}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
-                {isLoading ? "Adding..." : "Add Category"}
+                {isPending ? (isEditMode ? "Updating..." : "Adding...") : (isEditMode ? "Update Category" : "Add Category")}
               </Button>
             </div>
           </form>
