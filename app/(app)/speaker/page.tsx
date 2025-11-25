@@ -20,67 +20,57 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AddSpeakerDialog } from "@/components/custom/dialog/AddSpeakerDialog";
-
-const speakersData = [
-  { 
-    id: 1, 
-    name: "Sheikh Ahmad Al-Khalil", 
-    email: "ahmad@example.com",
-    lectures: 45, 
-    totalViews: "342K",
-    status: "Active",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad"
-  },
-  { 
-    id: 2, 
-    name: "Sheikh Muhammad Ibrahim", 
-    email: "muhammad@example.com",
-    lectures: 38, 
-    totalViews: "287K",
-    status: "Active",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Muhammad"
-  },
-  { 
-    id: 3, 
-    name: "Sheikh Abdullah Hassan", 
-    email: "abdullah@example.com",
-    lectures: 52, 
-    totalViews: "421K",
-    status: "Active",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Abdullah"
-  },
-  { 
-    id: 4, 
-    name: "Sheikh Omar Suleiman", 
-    email: "omar@example.com",
-    lectures: 31, 
-    totalViews: "198K",
-    status: "Inactive",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Omar"
-  },
-  { 
-    id: 5, 
-    name: "Sheikh Yasir Qadhi", 
-    email: "yasir@example.com",
-    lectures: 67, 
-    totalViews: "534K",
-    status: "Active",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Yasir"
-  },
-];
+import { DeleteSpeakerDialog } from "@/components/custom/dialog/DeleteSpeakerDialog";
+import { useSpeakers } from "@/hooks/useSpeakers";
+import { Speaker } from "@/services/speaker.service";
 
 export default function Speakers() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedSpeaker, setSelectedSpeaker] = useState<Speaker | null>(null);
+
+  const { data: speakers, isLoading, error } = useSpeakers();
+
+  const handleAdd = () => {
+    setSelectedSpeaker(null);
+    setIsAddDialogOpen(true);
+  };
+
+  const handleEdit = (speaker: Speaker) => {
+    setSelectedSpeaker(speaker);
+    setIsAddDialogOpen(true);
+  };
+
+  const handleDelete = (speaker: Speaker) => {
+    setSelectedSpeaker(speaker);
+    setIsDeleteDialogOpen(true);
+  };
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Loading speakers...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-center text-destructive">
+        Failed to load speakers
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Speakers Management</h1>
-          <p className="text-muted-foreground">Manage your lecture speakers and their profiles</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            Speakers Management
+          </h1>
+          <p className="text-muted-foreground">
+            Manage your lecture speakers and their profiles
+          </p>
         </div>
-        <Button 
-          onClick={() => setIsAddDialogOpen(true)}
+        <Button
+          onClick={handleAdd}
           className="bg-primary hover:bg-primary/90 text-primary-foreground"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -88,7 +78,17 @@ export default function Speakers() {
         </Button>
       </div>
 
-      <AddSpeakerDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} />
+      <AddSpeakerDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        speaker={selectedSpeaker}
+      />
+
+      <DeleteSpeakerDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        speaker={selectedSpeaker}
+      />
 
       <Card className="bg-card border-border">
         <CardHeader>
@@ -108,27 +108,48 @@ export default function Speakers() {
               <TableRow className="border-border hover:bg-transparent">
                 <TableHead className="text-muted-foreground">Speaker</TableHead>
                 <TableHead className="text-muted-foreground">Email</TableHead>
-                <TableHead className="text-muted-foreground">Lectures</TableHead>
-                <TableHead className="text-muted-foreground">Total Views</TableHead>
+                <TableHead className="text-muted-foreground">Address</TableHead>
+                <TableHead className="text-muted-foreground">
+                  Lectures
+                </TableHead>
+                <TableHead className="text-muted-foreground">
+                  Total Views
+                </TableHead>
                 <TableHead className="text-muted-foreground">Status</TableHead>
                 <TableHead className="text-muted-foreground"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {speakersData.map((speaker) => (
-                <TableRow key={speaker.id} className="border-border hover:bg-secondary/50">
+              {speakers?.map((speaker) => (
+                <TableRow
+                  key={speaker.id}
+                  className="border-border hover:bg-secondary/50"
+                >
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
                       <Avatar>
-                        <AvatarImage src={speaker.avatar} alt={speaker.name} />
-                        <AvatarFallback>{speaker.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                        <AvatarFallback>
+                          {speaker.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </AvatarFallback>
                       </Avatar>
                       <span className="text-foreground">{speaker.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-foreground">{speaker.email}</TableCell>
-                  <TableCell className="text-foreground">{speaker.lectures}</TableCell>
-                  <TableCell className="text-foreground">{speaker.totalViews}</TableCell>
+                  <TableCell className="text-foreground">
+                    {speaker.email}
+                  </TableCell>
+                  <TableCell className="text-foreground">
+                    {speaker.address || "-"}
+                  </TableCell>
+                  <TableCell className="text-foreground">
+                    {speaker.lecturesCount || 0}
+                  </TableCell>
+                  <TableCell className="text-foreground">
+                    {speaker.totalViews || "0"}
+                  </TableCell>
                   <TableCell>
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -147,12 +168,21 @@ export default function Speakers() {
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-popover border-border">
-                        <DropdownMenuItem className="text-foreground hover:bg-secondary cursor-pointer">
+                      <DropdownMenuContent
+                        align="end"
+                        className="bg-popover border-border"
+                      >
+                        <DropdownMenuItem
+                          className="text-foreground hover:bg-secondary cursor-pointer"
+                          onClick={() => handleEdit(speaker)}
+                        >
                           <Edit className="h-4 w-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive hover:bg-destructive/10 cursor-pointer">
+                        <DropdownMenuItem
+                          className="text-destructive hover:bg-destructive/10 cursor-pointer"
+                          onClick={() => handleDelete(speaker)}
+                        >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Delete
                         </DropdownMenuItem>

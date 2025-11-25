@@ -7,6 +7,7 @@ import {
   Settings,
   Mic2,
   FolderTree,
+  LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -20,6 +21,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Button } from "./ui/button";
+import { useRouter } from "next/navigation";
+import { useLogout } from "@/hooks/useUser";
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, exact: true },
@@ -33,6 +37,23 @@ const menuItems = [
 
 export function AdminSidebar() {
   const { open } = useSidebar();
+  const router = useRouter();
+  const { mutate: logout } = useLogout();
+
+  const handleLogout = () => {
+    logout(undefined, {
+      onSuccess: () => {
+        // Manually clear cookies to ensure logout
+        document.cookie =
+          "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+        document.cookie =
+          "refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+
+        // Redirect to login
+        router.push("/login");
+      },
+    });
+  };
 
   return (
     <Sidebar className={open ? "w-60" : "w-14"}>
@@ -77,6 +98,16 @@ export function AdminSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        <div className="mt-auto p-4 border-t border-border">
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4" />
+            {open && <span>Logout</span>}
+          </Button>
+        </div>
       </SidebarContent>
     </Sidebar>
   );

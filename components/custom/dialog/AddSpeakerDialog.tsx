@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { useCreateSpeaker, useUpdateSpeaker } from "@/hooks/useSpeakers";
+import { Speaker } from "@/services/speaker.service";
 import {
   Dialog,
   DialogContent,
@@ -23,10 +25,26 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 const speakerSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
-  email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
-  bio: z.string().trim().max(500, "Bio must be less than 500 characters").optional(),
-  avatarUrl: z.string().trim().url("Invalid URL").optional().or(z.literal("")),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Name is required")
+    .max(100, "Name must be less than 100 characters"),
+  email: z
+    .string()
+    .trim()
+    .email("Invalid email address")
+    .max(255, "Email must be less than 255 characters"),
+  bio: z
+    .string()
+    .trim()
+    .max(500, "Bio must be less than 500 characters")
+    .optional(),
+  address: z
+    .string()
+    .trim()
+    .max(255, "Address must be less than 255 characters")
+    .optional(),
 });
 
 type SpeakerFormValues = z.infer<typeof speakerSchema>;
@@ -34,10 +52,19 @@ type SpeakerFormValues = z.infer<typeof speakerSchema>;
 interface AddSpeakerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  speaker?: Speaker | null;
 }
 
-export function AddSpeakerDialog({ open, onOpenChange }: AddSpeakerDialogProps) {
-  const [isLoading, setIsLoading] = useState(false);
+export function AddSpeakerDialog({
+  open,
+  onOpenChange,
+  speaker,
+}: AddSpeakerDialogProps) {
+  const { mutate: createSpeaker, isPending: isCreating } = useCreateSpeaker();
+  const { mutate: updateSpeaker, isPending: isUpdating } = useUpdateSpeaker();
+
+  const isLoading = isCreating || isUpdating;
+  const isEditMode = !!speaker;
 
   const form = useForm<SpeakerFormValues>({
     resolver: zodResolver(speakerSchema),
@@ -45,22 +72,48 @@ export function AddSpeakerDialog({ open, onOpenChange }: AddSpeakerDialogProps) 
       name: "",
       email: "",
       bio: "",
-      avatarUrl: "",
+      address: "",
     },
   });
 
-  const onSubmit = async (data: SpeakerFormValues) => {
-    setIsLoading(true);
-    try {
-      // TODO: Implement actual API call to save speaker
-      console.log("Speaker data:", data);
-      toast.success("Speaker added successfully");
-      form.reset();
-      onOpenChange(false);
-    } catch (error) {
-      toast.error("Failed to add speaker");
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    if (open) {
+      if (speaker) {
+        form.reset({
+          name: speaker.name,
+          email: speaker.email,
+          bio: speaker.bio || "",
+          address: speaker.address || "",
+        });
+      } else {
+        form.reset({
+          name: "",
+          email: "",
+          bio: "",
+          address: "",
+        });
+      }
+    }
+  }, [open, speaker, form]);
+
+  const onSubmit = (data: SpeakerFormValues) => {
+    if (isEditMode && speaker) {
+      updateSpeaker(
+        { id: speaker.id, data },
+        {
+          onSuccess: () => {
+            form.reset();
+            onOpenChange(false);
+          },
+        }
+      );
+    } else {
+      createSpeaker(data, {
+        onSuccess: () => {
+          form.reset();
+          onOpenChange(false);
+        },
+      });
     }
   };
 
@@ -68,9 +121,13 @@ export function AddSpeakerDialog({ open, onOpenChange }: AddSpeakerDialogProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] bg-card border-border">
         <DialogHeader>
-          <DialogTitle className="text-foreground">Add New Speaker</DialogTitle>
+          <DialogTitle className="text-foreground">
+            {isEditMode ? "Edit Speaker" : "Add New Speaker"}
+          </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Add a new speaker to your platform. Fill in the details below.
+            {isEditMode
+              ? "Update speaker details."
+              : "Add a new speaker to your platform. Fill in the details below."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -82,10 +139,10 @@ export function AddSpeakerDialog({ open, onOpenChange }: AddSpeakerDialogProps) 
                 <FormItem>
                   <FormLabel className="text-foreground">Name *</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Sheikh Ahmad Al-Khalil" 
+                    <Input
+                      placeholder="Sheikh Ahmad Al-Khalil"
                       className="bg-background border-border text-foreground"
-                      {...field} 
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -99,11 +156,11 @@ export function AddSpeakerDialog({ open, onOpenChange }: AddSpeakerDialogProps) 
                 <FormItem>
                   <FormLabel className="text-foreground">Email *</FormLabel>
                   <FormControl>
-                    <Input 
+                    <Input
                       type="email"
-                      placeholder="ahmad@example.com" 
+                      placeholder="ahmad@example.com"
                       className="bg-background border-border text-foreground"
-                      {...field} 
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -117,11 +174,11 @@ export function AddSpeakerDialog({ open, onOpenChange }: AddSpeakerDialogProps) 
                 <FormItem>
                   <FormLabel className="text-foreground">Bio</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Brief biography of the speaker..." 
+                    <Textarea
+                      placeholder="Brief biography of the speaker..."
                       className="bg-background border-border text-foreground resize-none"
                       rows={3}
-                      {...field} 
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -130,16 +187,15 @@ export function AddSpeakerDialog({ open, onOpenChange }: AddSpeakerDialogProps) 
             />
             <FormField
               control={form.control}
-              name="avatarUrl"
+              name="address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-foreground">Avatar URL</FormLabel>
+                  <FormLabel className="text-foreground">Address</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="url"
-                      placeholder="https://example.com/avatar.jpg" 
+                    <Input
+                      placeholder="123 Main St, City, Country"
                       className="bg-background border-border text-foreground"
-                      {...field} 
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -156,12 +212,18 @@ export function AddSpeakerDialog({ open, onOpenChange }: AddSpeakerDialogProps) 
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isLoading}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
-                {isLoading ? "Adding..." : "Add Speaker"}
+                {isLoading
+                  ? isEditMode
+                    ? "Updating..."
+                    : "Adding..."
+                  : isEditMode
+                  ? "Update Speaker"
+                  : "Add Speaker"}
               </Button>
             </div>
           </form>

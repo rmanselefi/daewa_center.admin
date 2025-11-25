@@ -29,7 +29,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { UserDialog } from "@/components/custom/dialog/UserDialog";
 import { DeleteUserDialog } from "@/components/custom/dialog/DeleteUserDialog";
-import { useUsers } from "@/hooks/useUsers";
+import { useUsers, useUpdateUser } from "@/hooks/useUsers";
 import { User } from "@/services/user.service";
 
 export default function Users() {
@@ -38,6 +38,11 @@ export default function Users() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const { data: users, isLoading, error } = useUsers();
+  const { mutate: updateUser } = useUpdateUser();
+
+  const handleDeactivate = (user: User) => {
+    updateUser({ id: user.id, data: { status: "Inactive" } });
+  };
 
   const handleAdd = () => {
     setSelectedUser(null);
@@ -132,14 +137,11 @@ export default function Users() {
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8 bg-primary/20">
                         <AvatarFallback className="text-primary text-sm">
-                          {user.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
+                          {user.fullname}
                         </AvatarFallback>
                       </Avatar>
                       <span className="font-medium text-foreground">
-                        {user.name}
+                        {user.fullname}
                       </span>
                     </div>
                   </TableCell>
@@ -188,6 +190,15 @@ export default function Users() {
                           <Edit className="h-4 w-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
+                        {user.status === "Active" && (
+                          <DropdownMenuItem
+                            className="text-orange-500 hover:bg-orange-500/10 cursor-pointer"
+                            onClick={() => handleDeactivate(user)}
+                          >
+                            <UserX className="h-4 w-4 mr-2" />
+                            Deactivate
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                           className="text-destructive hover:bg-destructive/10 cursor-pointer"
                           onClick={() => handleDelete(user)}

@@ -2,9 +2,9 @@ import api from "@/lib/api";
 
 export type User = {
   id: string;
-  name: string;
+  fullname: string;
   email: string;
-  role: "Admin" | "User" | "Moderator";
+  role: "Admin" | "User";
   status: "Active" | "Inactive" | "Suspended";
   joined?: string;
   createdAt?: string;
@@ -14,12 +14,13 @@ export type User = {
 export type CreateUserDto = {
   name: string;
   email: string;
-  role: "Admin" | "User" | "Moderator";
-  status: "Active" | "Inactive" | "Suspended";
+  role: "Admin" | "User";
   password?: string; // Optional for now, maybe required for creation
 };
 
-export type UpdateUserDto = Partial<CreateUserDto>;
+export type UpdateUserDto = Partial<CreateUserDto> & {
+  status?: "Active" | "Inactive" | "Suspended";
+};
 
 export const UserService = {
   async getAll() {

@@ -3,6 +3,9 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { useCreateContent } from "@/hooks/useContents";
+import { useSpeakers } from "@/hooks/useSpeakers";
+import { useCategories } from "@/hooks/useCategories";
 import {
   Dialog,
   DialogContent,
@@ -36,29 +39,18 @@ const lectureSchema = z.object({
     .trim()
     .min(1, "Title is required")
     .max(200, "Title must be less than 200 characters"),
-  speaker: z.string().min(1, "Speaker is required"),
-  category: z.string().min(1, "Category is required"),
-  videoUrl: z
-    .string()
-    .trim()
-    .url("Invalid video URL")
-    .max(500, "URL must be less than 500 characters"),
+  speakerId: z.string().min(1, "Speaker is required"),
+  categoryId: z.string().min(1, "Category is required"),
+
+  audioFile: z
+    .instanceof(File)
+    .refine((file) => file.size > 0, "Audio file is required"),
+
   description: z
     .string()
     .trim()
     .max(1000, "Description must be less than 1000 characters")
     .optional(),
-  duration: z
-    .string()
-    .regex(/^\d{1,2}:\d{2}$/, "Duration must be in format MM:SS or HH:MM")
-    .optional()
-    .or(z.literal("")),
-  thumbnailUrl: z
-    .string()
-    .trim()
-    .url("Invalid URL")
-    .optional()
-    .or(z.literal("")),
 });
 
 type LectureFormValues = z.infer<typeof lectureSchema>;
@@ -68,56 +60,44 @@ interface AddContentDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// Mock data - replace with actual data from your database
-const speakers = [
-  "Sheikh Ahmad Al-Khalil",
-  "Sheikh Muhammad Ibrahim",
-  "Sheikh Abdullah Hassan",
-  "Sheikh Omar Suleiman",
-  "Sheikh Yasir Qadhi",
-];
-
-const categories = [
-  "Faith & Belief",
-  "Quran Studies",
-  "Islamic History",
-  "Family & Society",
-  "Ramadan",
-  "Prayer & Worship",
-];
-
 export function AddContentDialog({
   open,
   onOpenChange,
 }: AddContentDialogProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const { mutate: createContent, isPending } = useCreateContent();
+  const { data: speakers } = useSpeakers();
+  const { data: categories } = useCategories();
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const form = useForm<LectureFormValues>({
     resolver: zodResolver(lectureSchema),
     defaultValues: {
       title: "",
-      speaker: "",
-      category: "",
-      videoUrl: "",
+      speakerId: "",
+      categoryId: "",
+      audioFile: new File([], ""),
       description: "",
-      duration: "",
-      thumbnailUrl: "",
     },
   });
 
-  const onSubmit = async (data: LectureFormValues) => {
-    setIsLoading(true);
-    try {
-      // TODO: Implement actual API call to save lecture
-      console.log("Lecture data:", data);
-      toast.success("Lecture added successfully");
-      form.reset();
-      onOpenChange(false);
-    } catch (error) {
-      toast.error("Failed to add lecture");
-    } finally {
-      setIsLoading(false);
-    }
+  const onSubmit = (data: LectureFormValues) => {
+    createContent(
+      {
+        title: data.title,
+        speakerId: data.speakerId,
+        categoryId: data.categoryId,
+        description: data.description,
+        audioFile: data.audioFile,
+      },
+      {
+        onSuccess: () => {
+          form.reset();
+          setSelectedFile(null);
+          onOpenChange(false);
+        },
+      }
+    );
   };
 
   return (
@@ -151,7 +131,7 @@ export function AddContentDialog({
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="speaker"
+                name="speakerId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-foreground">Speaker *</FormLabel>
@@ -165,13 +145,13 @@ export function AddContentDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-popover border-border">
-                        {speakers.map((speaker) => (
+                        {speakers?.map((speaker) => (
                           <SelectItem
-                            key={speaker}
-                            value={speaker}
+                            key={speaker.id}
+                            value={speaker.id}
                             className="text-foreground"
                           >
-                            {speaker}
+                            {speaker.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -182,7 +162,7 @@ export function AddContentDialog({
               />
               <FormField
                 control={form.control}
-                name="category"
+                name="categoryId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-foreground">
@@ -198,13 +178,13 @@ export function AddContentDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-popover border-border">
-                        {categories.map((category) => (
+                        {categories?.map((category) => (
                           <SelectItem
-                            key={category}
-                            value={category}
+                            key={category.id}
+                            value={category.id}
                             className="text-foreground"
                           >
-                            {category}
+                            {category.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -214,24 +194,43 @@ export function AddContentDialog({
                 )}
               />
             </div>
+
             <FormField
               control={form.control}
-              name="videoUrl"
-              render={({ field }) => (
+              name="audioFile"
+              render={({ field: { onChange, value, ...field } }) => (
                 <FormItem>
-                  <FormLabel className="text-foreground">Video URL *</FormLabel>
+                  <FormLabel className="text-foreground">
+                    Audio File *
+                  </FormLabel>
                   <FormControl>
-                    <Input
-                      type="url"
-                      placeholder="https://youtube.com/watch?v=..."
-                      className="bg-background border-border text-foreground"
-                      {...field}
-                    />
+                    <div className="space-y-2">
+                      <Input
+                        type="file"
+                        accept="audio/*"
+                        className="bg-background border-border text-foreground file:text-foreground"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setSelectedFile(file);
+                            onChange(file);
+                          }
+                        }}
+                        {...field}
+                      />
+                      {selectedFile && (
+                        <p className="text-sm text-muted-foreground">
+                          Selected: {selectedFile.name} (
+                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                        </p>
+                      )}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="description"
@@ -250,61 +249,23 @@ export function AddContentDialog({
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="duration"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-foreground">Duration</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="45:23"
-                        className="bg-background border-border text-foreground font-mono"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="thumbnailUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-foreground">
-                      Thumbnail URL
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="url"
-                        placeholder="https://..."
-                        className="bg-background border-border text-foreground"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+
             <div className="flex justify-end gap-3 pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={isLoading}
+                disabled={isPending}
                 className="border-border"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={isLoading}
+                disabled={isPending}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
-                {isLoading ? "Adding..." : "Add Lecture"}
+                {isPending ? "Adding..." : "Add Lecture"}
               </Button>
             </div>
           </form>

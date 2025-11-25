@@ -37,8 +37,7 @@ const userSchema = z.object({
     .min(1, "Name is required")
     .max(50, "Name must be less than 50 characters"),
   email: z.string().trim().email("Invalid email address"),
-  role: z.enum(["Admin", "User", "Moderator"]),
-  status: z.enum(["Active", "Inactive", "Suspended"]),
+  role: z.enum(["Admin", "User"]),
 });
 
 type UserFormValues = z.infer<typeof userSchema>;
@@ -62,7 +61,6 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
       name: "",
       email: "",
       role: "User",
-      status: "Active",
     },
   });
 
@@ -70,17 +68,15 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
     if (open) {
       if (user) {
         form.reset({
-          name: user.name,
+          name: user.fullname,
           email: user.email,
           role: user.role,
-          status: user.status,
         });
       } else {
         form.reset({
           name: "",
           email: "",
           role: "User",
-          status: "Active",
         });
       }
     }
@@ -155,58 +151,30 @@ export function UserDialog({ open, onOpenChange, user }: UserDialogProps) {
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-foreground">Role</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="bg-background border-border text-foreground">
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="bg-popover border-border">
-                        <SelectItem value="User">User</SelectItem>
-                        <SelectItem value="Moderator">Moderator</SelectItem>
-                        <SelectItem value="Admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-foreground">Status</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="bg-background border-border text-foreground">
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="bg-popover border-border">
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
-                        <SelectItem value="Suspended">Suspended</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">Role</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="bg-background border-border text-foreground">
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="bg-popover border-border">
+                      <SelectItem value="User">User</SelectItem>
+                      <SelectItem value="Admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="flex justify-end gap-3 pt-4">
               <Button

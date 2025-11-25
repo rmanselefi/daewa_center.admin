@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, MoreVertical, Edit, Trash2 } from "lucide-react";
@@ -19,57 +19,38 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AddContentDialog } from "@/components/custom/dialog/AddContentDialog";
+import { DeleteContentDialog } from "@/components/custom/dialog/DeleteContentDialog";
+import { useContents } from "@/hooks/useContents";
+import { Content } from "@/services/content.service";
+import { format } from "date-fns";
 
-const contentData = [
-  {
-    id: 1,
-    title: "The Importance of Patience",
-    speaker: "Sheikh Ahmad Al-Khalil",
-    duration: "45:23",
-    views: "15.2K",
-    status: "Published",
-    date: "2024-01-15",
-  },
-  {
-    id: 2,
-    title: "Understanding Tawheed",
-    speaker: "Sheikh Muhammad Ibrahim",
-    duration: "52:18",
-    views: "12.8K",
-    status: "Published",
-    date: "2024-01-14",
-  },
-  {
-    id: 3,
-    title: "The Virtues of Ramadan",
-    speaker: "Sheikh Abdullah Hassan",
-    duration: "38:45",
-    views: "18.5K",
-    status: "Published",
-    date: "2024-01-13",
-  },
-  {
-    id: 4,
-    title: "Quranic Reflections",
-    speaker: "Sheikh Omar Suleiman",
-    duration: "41:30",
-    views: "9.3K",
-    status: "Draft",
-    date: "2024-01-12",
-  },
-  {
-    id: 5,
-    title: "The Path to Paradise",
-    speaker: "Sheikh Yasir Qadhi",
-    duration: "49:12",
-    views: "11.7K",
-    status: "Published",
-    date: "2024-01-11",
-  },
-];
-
-export default function Content() {
+export default function ContentPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedContent, setSelectedContent] = useState<Content | null>(null);
+
+  const { data: contents, isLoading, error } = useContents();
+
+  const handleAdd = () => {
+    setIsAddDialogOpen(true);
+  };
+
+  const handleDelete = (content: Content) => {
+    setSelectedContent(content);
+    setIsDeleteDialogOpen(true);
+  };
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Loading content...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-center text-destructive">
+        Failed to load content
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -83,7 +64,7 @@ export default function Content() {
           </p>
         </div>
         <Button
-          onClick={() => setIsAddDialogOpen(true)}
+          onClick={handleAdd}
           className="bg-primary hover:bg-primary/90 text-primary-foreground"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -94,6 +75,12 @@ export default function Content() {
       <AddContentDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
+      />
+
+      <DeleteContentDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        content={selectedContent}
       />
 
       <Card className="bg-card border-border">
@@ -115,6 +102,9 @@ export default function Content() {
                 <TableHead className="text-muted-foreground">Title</TableHead>
                 <TableHead className="text-muted-foreground">Speaker</TableHead>
                 <TableHead className="text-muted-foreground">
+                  Category
+                </TableHead>
+                <TableHead className="text-muted-foreground">
                   Duration
                 </TableHead>
                 <TableHead className="text-muted-foreground">Views</TableHead>
@@ -124,7 +114,7 @@ export default function Content() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {contentData.map((item) => (
+              {contents?.map((item) => (
                 <TableRow
                   key={item.id}
                   className="border-border hover:bg-secondary/50"
@@ -133,13 +123,16 @@ export default function Content() {
                     {item.title}
                   </TableCell>
                   <TableCell className="text-foreground">
-                    {item.speaker}
+                    {item.speaker?.name || "-"}
                   </TableCell>
                   <TableCell className="text-foreground">
-                    {item.duration}
+                    {item.category?.name || "-"}
                   </TableCell>
                   <TableCell className="text-foreground">
-                    {item.views}
+                    {item.duration || "-"}
+                  </TableCell>
+                  <TableCell className="text-foreground">
+                    {item.views || 0}
                   </TableCell>
                   <TableCell>
                     <span
@@ -152,7 +145,11 @@ export default function Content() {
                       {item.status}
                     </span>
                   </TableCell>
-                  <TableCell className="text-foreground">{item.date}</TableCell>
+                  <TableCell className="text-foreground">
+                    {item.createdAt
+                      ? format(new Date(item.createdAt), "yyyy-MM-dd")
+                      : "-"}
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -168,7 +165,10 @@ export default function Content() {
                           <Edit className="h-4 w-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive hover:bg-destructive/10 cursor-pointer">
+                        <DropdownMenuItem
+                          className="text-destructive hover:bg-destructive/10 cursor-pointer"
+                          onClick={() => handleDelete(item)}
+                        >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Delete
                         </DropdownMenuItem>
