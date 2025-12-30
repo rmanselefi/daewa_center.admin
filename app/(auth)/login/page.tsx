@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,14 +11,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
+
 import { toast } from "sonner";
 import { Shield } from "lucide-react";
 import { useLogin } from "@/hooks/useUser";
 
 const Login = () => {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const router = useRouter()
 
   const { mutate: login, isPending, error } = useLogin();
 
@@ -30,14 +32,14 @@ const Login = () => {
       { email, password },
       {
         onSuccess: () => {
-          // Show success message
-          toast.success("Login successful! Redirecting...");
-          
-          // Wait a moment for the cookie to be set by the backend
-          // Then use Next.js router for navigation
-          setTimeout(() => {
-            router.push("/dashboard");
-          }, 500);
+          // Show success message with longer duration
+
+          console.log("Logged in successfully")
+          toast.success("Login successful! Redirecting...", {
+            duration: 2000,
+          });
+          router.push("/dashboard");
+         
         },
         onError: () => {
           toast.error("Invalid email or password");
