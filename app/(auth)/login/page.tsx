@@ -36,7 +36,7 @@ const Login = () => {
           // Wait a moment for the cookie to be set by the backend
           // Then use Next.js router for navigation
           setTimeout(() => {
-            router.replace("/dashboard");
+            router.push("/dashboard");
           }, 500);
         },
         onError: () => {
