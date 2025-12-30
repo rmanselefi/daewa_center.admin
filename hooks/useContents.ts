@@ -5,6 +5,7 @@ import {
   UpdateContentDto,
 } from "@/services/content.service";
 import { toast } from "sonner";
+import { AxiosError } from "axios";
 
 export const CONTENT_KEYS = {
   all: ["contents"] as const,
@@ -38,7 +39,7 @@ export function useCreateContent() {
       queryClient.invalidateQueries({ queryKey: CONTENT_KEYS.lists() });
       toast.success("Content created successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to create content");
     },
   });
@@ -55,7 +56,7 @@ export function useUpdateContent() {
       queryClient.invalidateQueries({ queryKey: CONTENT_KEYS.detail(data.id) });
       toast.success("Content updated successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to update content");
     },
   });
@@ -70,7 +71,7 @@ export function useDeleteContent() {
       queryClient.invalidateQueries({ queryKey: CONTENT_KEYS.lists() });
       toast.success("Content deleted successfully");
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<{ message?: string }>) => {
       toast.error(error.response?.data?.message || "Failed to delete content");
     },
   });

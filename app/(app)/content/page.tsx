@@ -19,13 +19,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AddContentDialog } from "@/components/custom/dialog/AddContentDialog";
+import { EditContentDialog } from "@/components/custom/dialog/EditContentDialog";
 import { DeleteContentDialog } from "@/components/custom/dialog/DeleteContentDialog";
 import { useContents } from "@/hooks/useContents";
 import { Content } from "@/services/content.service";
 import { format } from "date-fns";
+import { Switch } from "@radix-ui/react-switch";
 
 export default function ContentPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
 
@@ -35,9 +38,18 @@ export default function ContentPage() {
     setIsAddDialogOpen(true);
   };
 
+  const handleEdit = (content: Content) => {
+    setSelectedContent(content);
+    setIsEditDialogOpen(true);
+  };
+
   const handleDelete = (content: Content) => {
     setSelectedContent(content);
     setIsDeleteDialogOpen(true);
+  };
+
+  const toggleFeatured = () => {
+    // TODO: Implement featured toggle functionality
   };
 
   if (isLoading) {
@@ -77,9 +89,21 @@ export default function ContentPage() {
         onOpenChange={setIsAddDialogOpen}
       />
 
+      <EditContentDialog
+        open={isEditDialogOpen}
+        onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) setSelectedContent(null);
+        }}
+        content={selectedContent}
+      />
+
       <DeleteContentDialog
         open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
+        onOpenChange={(open) => {
+          setIsDeleteDialogOpen(open);
+          if (!open) setSelectedContent(null);
+        }}
         content={selectedContent}
       />
 
@@ -108,6 +132,9 @@ export default function ContentPage() {
                   Duration
                 </TableHead>
                 <TableHead className="text-muted-foreground">Views</TableHead>
+                <TableHead className="text-muted-foreground">
+                  Featured
+                </TableHead>
                 <TableHead className="text-muted-foreground">Status</TableHead>
                 <TableHead className="text-muted-foreground">Date</TableHead>
                 <TableHead className="text-muted-foreground"></TableHead>
@@ -133,6 +160,12 @@ export default function ContentPage() {
                   </TableCell>
                   <TableCell className="text-foreground">
                     {item.views || 0}
+                  </TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={item.isFeatured}
+                      onCheckedChange={() => toggleFeatured(item.id)}
+                    />
                   </TableCell>
                   <TableCell>
                     <span
@@ -161,7 +194,10 @@ export default function ContentPage() {
                         align="end"
                         className="bg-popover border-border"
                       >
-                        <DropdownMenuItem className="text-foreground hover:bg-secondary cursor-pointer">
+                        <DropdownMenuItem 
+                          className="text-foreground hover:bg-secondary cursor-pointer"
+                          onClick={() => handleEdit(item)}
+                        >
                           <Edit className="h-4 w-4 mr-2" />
                           Edit
                         </DropdownMenuItem>

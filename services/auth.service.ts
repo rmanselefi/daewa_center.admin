@@ -13,7 +13,7 @@ export type UserResponse = {
 export const AuthService = {
   async login(email: string, password: string) {
     const response = await api.post(
-      "/api/auth/admin-login",
+      "/api/v1/auth/admin-login",
       { email, password },
       { withCredentials: true }
     );
@@ -21,17 +21,17 @@ export const AuthService = {
   },
 
   async LogOut() {
-    const response = await api.post("/api/auth/logout");
+    const response = await api.post("/api/v1/auth/logout");
     return response.data;
   },
 
   async getUserMe(): Promise<UserResponse> {
-    const response = await api.get("/api/auth/me");
+    const response = await api.get("/api/v1/auth/me");
     return response.data;
   },
 
   async registerWithEmailAndPassword(email: string, password: string) {
-    const response = await api.post("/auth/register", { email, password });
+    const response = await api.post("/api/v1/auth/register", { email, password });
     return response.data;
   },
 };

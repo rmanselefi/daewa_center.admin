@@ -8,6 +8,7 @@ import {
   Mic2,
   FolderTree,
   LogOut,
+  BookOpen,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -28,6 +29,7 @@ import { useLogout } from "@/hooks/useUser";
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, exact: true },
   { title: "Content", url: "/content", icon: Video },
+  { title: "Courses", url: "/course", icon: BookOpen },
   { title: "Speakers", url: "/speaker", icon: Mic2 },
   { title: "Categories", url: "/category", icon: FolderTree },
   { title: "Users", url: "/user", icon: Users },

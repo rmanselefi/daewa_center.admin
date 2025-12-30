@@ -12,6 +12,7 @@ export type Content = {
   status: "Published" | "Draft" | "Archived";
   createdAt?: string;
   updatedAt?: string;
+  isFeatured?: boolean;
   speaker?: {
     name: string;
   };
@@ -29,17 +30,18 @@ export type CreateContentDto = {
 };
 
 export type UpdateContentDto = Partial<Omit<CreateContentDto, "audioFile">> & {
+  audioFile?: File;
   status?: "Published" | "Draft" | "Archived";
 };
 
 export const ContentService = {
   async getAll() {
-    const response = await api.get<Content[]>("/api/content");
+    const response = await api.get<Content[]>("/api/v1/content");
     return response.data;
   },
 
   async getById(id: string) {
-    const response = await api.get<Content>(`/api/content/${id}`);
+    const response = await api.get<Content>(`/api/v1/content/${id}`);
     return response.data;
   },
 
@@ -51,7 +53,7 @@ export const ContentService = {
     if (data.description) formData.append("description", data.description);
     formData.append("file", data.audioFile);
 
-    const response = await api.post<Content>("/api/content", formData, {
+    const response = await api.post<Content>("/api/v1/content", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -60,12 +62,34 @@ export const ContentService = {
   },
 
   async update(id: string, data: UpdateContentDto) {
-    const response = await api.patch<Content>(`/api/content/${id}`, data);
-    return response.data;
+    // Check if we have a file to upload
+    const hasFile = data.audioFile instanceof File;
+    
+    if (hasFile) {
+      // Use FormData for file uploads
+      const formData = new FormData();
+      if (data.title) formData.append("title", data.title);
+      if (data.speakerId) formData.append("speakerId", data.speakerId);
+      if (data.categoryId) formData.append("categoryId", data.categoryId);
+      if (data.description !== undefined) formData.append("description", data.description || "");
+      if (data.status) formData.append("status", data.status);
+      if (data.audioFile) formData.append("file", data.audioFile);
+
+      const response = await api.patch<Content>(`/api/v1/content/${id}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } else {
+      // Use regular JSON for non-file updates
+      const response = await api.patch<Content>(`/api/v1/content/${id}`, data);
+      return response.data;
+    }
   },
 
   async delete(id: string) {
-    const response = await api.delete(`/api/content/${id}`);
+    const response = await api.delete(`/api/v1/content/${id}`);
     return response.data;
   },
 };
