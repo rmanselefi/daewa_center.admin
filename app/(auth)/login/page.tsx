@@ -30,9 +30,14 @@ const Login = () => {
       { email, password },
       {
         onSuccess: () => {
-          // Use window.location for a full page reload to ensure cookies are available
-          // This is more reliable in production where cookies might have domain/path restrictions
-          window.location.href = "/dashboard";
+          // Show success message
+          toast.success("Login successful! Redirecting...");
+          
+          // Wait a moment for the cookie to be set by the backend
+          // Then use Next.js router for navigation
+          setTimeout(() => {
+            router.replace("/dashboard");
+          }, 500);
         },
         onError: () => {
           toast.error("Invalid email or password");
