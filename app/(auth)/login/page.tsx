@@ -30,7 +30,9 @@ const Login = () => {
       { email, password },
       {
         onSuccess: () => {
-          router.push("/dashboard");
+          // Use window.location for a full page reload to ensure cookies are available
+          // This is more reliable in production where cookies might have domain/path restrictions
+          window.location.href = "/dashboard";
         },
         onError: () => {
           toast.error("Invalid email or password");

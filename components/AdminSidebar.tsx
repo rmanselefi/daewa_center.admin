@@ -23,7 +23,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "./ui/button";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useLogout } from "@/hooks/useUser";
 
 const menuItems = [
@@ -40,6 +40,7 @@ const menuItems = [
 export function AdminSidebar() {
   const { open } = useSidebar();
   const router = useRouter();
+  const pathname = usePathname();
   const { mutate: logout } = useLogout();
 
   const handleLogout = () => {
@@ -81,22 +82,29 @@ export function AdminSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      href={item.url}
-                      isActive={item.exact}
-                      isPending={false}
-                      className="hover:bg-sidebar-accent transition-colors"
-                      activeClassName="bg-sidebar-accent text-primary font-medium"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {open && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {menuItems.map((item) => {
+                // Check if current path matches the menu item
+                const isActive = item.exact
+                  ? pathname === item.url
+                  : pathname === item.url || pathname.startsWith(`${item.url}/`);
+                
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild isActive={isActive}>
+                      <NavLink
+                        href={item.url}
+                        isActive={isActive}
+                        isPending={false}
+                        className="hover:bg-sidebar-accent transition-colors"
+                        activeClassName="bg-sidebar-accent text-primary font-medium"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        {open && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
