@@ -32,6 +32,7 @@ export type CreateContentDto = {
 export type UpdateContentDto = Partial<Omit<CreateContentDto, "audioFile">> & {
   audioFile?: File;
   status?: "Published" | "Draft" | "Archived";
+  isFeatured?: boolean;
 };
 
 export const ContentService = {

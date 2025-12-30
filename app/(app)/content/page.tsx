@@ -21,7 +21,7 @@ import {
 import { AddContentDialog } from "@/components/custom/dialog/AddContentDialog";
 import { EditContentDialog } from "@/components/custom/dialog/EditContentDialog";
 import { DeleteContentDialog } from "@/components/custom/dialog/DeleteContentDialog";
-import { useContents } from "@/hooks/useContents";
+import { useContents, useUpdateContent } from "@/hooks/useContents";
 import { Content } from "@/services/content.service";
 import { format } from "date-fns";
 import { Switch } from "@radix-ui/react-switch";
@@ -33,6 +33,7 @@ export default function ContentPage() {
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
 
   const { data: contents, isLoading, error } = useContents();
+  const updateContent = useUpdateContent();
 
   const handleAdd = () => {
     setIsAddDialogOpen(true);
@@ -48,8 +49,11 @@ export default function ContentPage() {
     setIsDeleteDialogOpen(true);
   };
 
-  const toggleFeatured = () => {
-    // TODO: Implement featured toggle functionality
+  const toggleFeatured = (id: string, currentFeatured: boolean) => {
+    updateContent.mutate({
+      id,
+      data: { isFeatured: !currentFeatured },
+    });
   };
 
   if (isLoading) {
@@ -164,7 +168,7 @@ export default function ContentPage() {
                   <TableCell>
                     <Switch
                       checked={item.isFeatured}
-                      onCheckedChange={() => toggleFeatured(item.id)}
+                      onCheckedChange={() => toggleFeatured(item.id, item.isFeatured || false)}
                     />
                   </TableCell>
                   <TableCell>

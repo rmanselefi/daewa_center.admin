@@ -43,7 +43,7 @@ export function DeleteUserDialog({
             This action cannot be undone. This will permanently delete the user
             <span className="font-semibold text-foreground">
               {" "}
-              {user?.name}{" "}
+              {user?.fullname}{" "}
             </span>
             and remove them from our servers.
           </DialogDescription>

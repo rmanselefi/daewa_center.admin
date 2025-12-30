@@ -22,7 +22,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Upload, Loader2 } from "lucide-react";
 import { useUpdateLesson } from "@/hooks/useLessons";
-import type { Lesson } from "@/services/course.service";
+import type { Lesson as CourseLesson } from "@/services/course.service";
+
+type Lesson = CourseLesson & {
+  audioUrl?: string;
+};
 
 const lessonSchema = z.object({
   lessonTitle: z.string().optional(),
@@ -57,7 +61,6 @@ export function EditLessonDialog({ open, onOpenChange, lesson, onSuccess }: Edit
         lessonTitle: lesson.lessonTitle || "",
         orderIndex: lesson.orderIndex || 1,
       });
-      setSelectedFile(null);
     }
   }, [open, lesson, form]);
 
@@ -82,12 +85,16 @@ export function EditLessonDialog({ open, onOpenChange, lesson, onSuccess }: Edit
     }
   };
 
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
+  const handleOpenChange = (newOpen: boolean) => {
+    if (newOpen) {
+      // Reset selected file when opening
+      setSelectedFile(null);
+    } else {
+      // Reset form and selected file when closing
       form.reset();
       setSelectedFile(null);
     }
-    onOpenChange(open);
+    onOpenChange(newOpen);
   };
 
   if (!lesson) return null;
@@ -153,7 +160,7 @@ export function EditLessonDialog({ open, onOpenChange, lesson, onSuccess }: Edit
                           </span>
                         </div>
                       )}
-                      {!selectedFile && 'audioUrl' in lesson && lesson.audioUrl && (
+                      {!selectedFile && lesson.audioUrl && (
                         <p className="text-xs text-muted-foreground">
                           Current file: {lesson.audioUrl.split('/').pop() || 'Audio file'}
                         </p>
