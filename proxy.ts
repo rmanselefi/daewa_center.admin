@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function proxy(req: NextRequest) {
+  // TEMPORARILY DISABLED FOR TESTING - Allow all requests through
+  return NextResponse.next();
+  
+  /* ORIGINAL PROXY LOGIC - COMMENTED OUT FOR TESTING
   const { pathname } = req.nextUrl;
 
   // 1️⃣ Allow Next.js internals and static files
@@ -33,5 +37,6 @@ export function proxy(req: NextRequest) {
   }
 
   return NextResponse.next();
+  */
 }
 
