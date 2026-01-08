@@ -37,11 +37,13 @@ export default function Courses() {
     }
   };
 
-  const filteredCourses = courses?.filter((course) =>
-    course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    course.speaker?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    course.category?.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredCourses = Array.isArray(courses) 
+    ? courses.filter((course) =>
+        course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.speaker?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.category?.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
 
   return (
     <div className="space-y-6">

@@ -120,7 +120,7 @@ export default function Speakers() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {speakers?.map((speaker) => (
+              {Array.isArray(speakers) && speakers.map((speaker) => (
                 <TableRow
                   key={speaker.id}
                   className="border-border hover:bg-secondary/50"

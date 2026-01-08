@@ -128,7 +128,7 @@ export default function Users() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users?.map((user) => (
+              {Array.isArray(users) && users.map((user) => (
                 <TableRow
                   key={user.id}
                   className="border-border hover:bg-secondary/50"

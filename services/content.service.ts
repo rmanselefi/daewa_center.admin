@@ -3,22 +3,47 @@ import api from "@/lib/api";
 export type Content = {
   id: string;
   title: string;
-  speakerId: string;
-  categoryId: string;
+  speakerId?: string;
+  categoryId?: string;
   description?: string;
   audioUrl: string;
-  duration?: string;
-  views?: number;
-  status: "Published" | "Draft" | "Archived";
+  duration?: string | null;
+  playCount?: number;
+  isPublished?: boolean | null;
+  status?: "Published" | "Draft" | "Archived";
   createdAt?: string;
   updatedAt?: string;
   isFeatured?: boolean;
   speaker?: {
+    id: string;
     name: string;
+    bio?: string;
+    address?: string;
+    image?: string | null;
   };
   category?: {
+    id: string;
     name: string;
+    slug?: string;
+    description?: string;
+    imageUrl?: string | null;
   };
+};
+
+export type ContentListResponse = {
+  data: Content[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+};
+
+export type ContentQueryParams = {
+  search?: string;
+  page?: number;
+  limit?: number;
 };
 
 export type CreateContentDto = {
@@ -36,8 +61,16 @@ export type UpdateContentDto = Partial<Omit<CreateContentDto, "audioFile">> & {
 };
 
 export const ContentService = {
-  async getAll() {
-    const response = await api.get<Content[]>("/api/v1/content");
+  async getAll(params?: ContentQueryParams) {
+    const queryParams = new URLSearchParams();
+    if (params?.search) queryParams.append("search", params.search);
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    
+    const queryString = queryParams.toString();
+    const url = `/api/v1/content${queryString ? `?${queryString}` : ""}`;
+    const response = await api.get<ContentListResponse>(url);
+    
     return response.data;
   },
 
@@ -74,6 +107,7 @@ export const ContentService = {
       if (data.categoryId) formData.append("categoryId", data.categoryId);
       if (data.description !== undefined) formData.append("description", data.description || "");
       if (data.status) formData.append("status", data.status);
+      if (data.isFeatured !== undefined) formData.append("isFeatured", data.isFeatured.toString());
       if (data.audioFile) formData.append("file", data.audioFile);
 
       const response = await api.patch<Content>(`/api/v1/content/${id}`, formData, {

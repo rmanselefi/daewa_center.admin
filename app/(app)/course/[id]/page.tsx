@@ -138,7 +138,7 @@ export default function CourseDetails() {
           </div>
         </CardHeader>
         <CardContent>
-          {course.lessons && course.lessons.length > 0 ? (
+          {Array.isArray(course.lessons) && course.lessons.length > 0 ? (
             <div className="space-y-2">
               {course.lessons.map((lesson) => (
                 <div 

@@ -7,18 +7,28 @@ import {
 import { toast } from "sonner";
 import { AxiosError } from "axios";
 
+import { ContentQueryParams } from "@/services/content.service";
+
 export const CONTENT_KEYS = {
   all: ["contents"] as const,
   lists: () => [...CONTENT_KEYS.all, "list"] as const,
-  list: (filters: string) => [...CONTENT_KEYS.lists(), { filters }] as const,
+  list: (params?: ContentQueryParams) => [...CONTENT_KEYS.lists(), params] as const,
   details: () => [...CONTENT_KEYS.all, "detail"] as const,
   detail: (id: string) => [...CONTENT_KEYS.details(), id] as const,
 };
 
-export function useContents() {
+export function useContents(params?: ContentQueryParams) {
   return useQuery({
-    queryKey: CONTENT_KEYS.lists(),
-    queryFn: () => ContentService.getAll(),
+    queryKey: CONTENT_KEYS.list(params),
+    queryFn: async () => {
+      try {
+        const result = await ContentService.getAll(params);
+        return result;
+      } catch (error) {
+        console.error("useContents - Error:", error);
+        throw error;
+      }
+    },
   });
 }
 

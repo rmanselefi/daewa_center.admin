@@ -107,7 +107,7 @@ export default function Categories() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {categories?.map((category) => (
+              {Array.isArray(categories) && categories.map((category) => (
                 <TableRow key={category.id} className="border-border hover:bg-secondary/50">
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">

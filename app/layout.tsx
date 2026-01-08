@@ -1,7 +1,6 @@
 import "./globals.css";
 import { QueryProvider } from "@/provider/query-provider";
-import { Toaster } from "@/components/ui/sonner";
-import { ThemeProvider } from "next-themes";
+import { Providers } from "@/provider/theme-provider";
 
 export default function RootLayout({
   children,
@@ -11,12 +10,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased">
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <Providers>
           <QueryProvider>
             {children}
-            <Toaster />
           </QueryProvider>
-        </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );

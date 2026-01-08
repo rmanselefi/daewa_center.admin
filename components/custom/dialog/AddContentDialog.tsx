@@ -145,7 +145,7 @@ export function AddContentDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-popover border-border">
-                        {speakers?.map((speaker) => (
+                        {Array.isArray(speakers) && speakers.map((speaker) => (
                           <SelectItem
                             key={speaker.id}
                             value={speaker.id}
@@ -178,7 +178,7 @@ export function AddContentDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-popover border-border">
-                        {categories?.map((category) => (
+                        {Array.isArray(categories) && categories.map((category) => (
                           <SelectItem
                             key={category.id}
                             value={category.id}

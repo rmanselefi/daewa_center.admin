@@ -33,13 +33,16 @@ const Login = () => {
       {
         onSuccess: () => {
           // Show success message with longer duration
-
-          console.log("Logged in successfully")
           toast.success("Login successful! Redirecting...", {
             duration: 2000,
           });
-          router.push("/dashboard");
-         
+          
+          // Refresh the router to ensure cookies are available, then navigate
+          // This ensures the proxy can see the cookie when checking authentication
+          setTimeout(() => {
+            router.refresh();
+            router.push("/dashboard");
+          }, 300);
         },
         onError: () => {
           toast.error("Invalid email or password");

@@ -2,10 +2,6 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function proxy(req: NextRequest) {
-  // TEMPORARILY DISABLED FOR TESTING - Allow all requests through
-  return NextResponse.next();
-  
-  /* ORIGINAL PROXY LOGIC - COMMENTED OUT FOR TESTING
   const { pathname } = req.nextUrl;
 
   // 1️⃣ Allow Next.js internals and static files
@@ -27,7 +23,18 @@ export function proxy(req: NextRequest) {
   }
 
   // 3️⃣ Everything except /login and root requires token
+  // BUT: Allow navigation to dashboard even without token if coming from login
+  // This handles the case where router.push() happens before cookie is available
+  const referer = req.headers.get("referer");
+  const isComingFromLogin = referer?.includes("/login");
+  const isDashboard = pathname === "/dashboard";
+  
   if (!isLoginPage && !token) {
+    // Special case: Allow dashboard access if coming from login page
+    // This handles the timing issue with client-side navigation
+    if (isDashboard && isComingFromLogin) {
+      return NextResponse.next();
+    }
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
@@ -37,6 +44,5 @@ export function proxy(req: NextRequest) {
   }
 
   return NextResponse.next();
-  */
 }
 

@@ -140,7 +140,7 @@ export function AddCourseDialog({ open, onOpenChange, onSuccess }: AddCourseDial
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="bg-card border-border">
-                      {speakers?.map((speaker) => (
+                      {Array.isArray(speakers) && speakers.map((speaker) => (
                         <SelectItem key={speaker.id} value={speaker.id}>
                           {speaker.name}
                         </SelectItem>
@@ -165,7 +165,7 @@ export function AddCourseDialog({ open, onOpenChange, onSuccess }: AddCourseDial
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="bg-card border-border">
-                      {categories?.map((category) => (
+                      {Array.isArray(categories) && categories.map((category) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
                         </SelectItem>
