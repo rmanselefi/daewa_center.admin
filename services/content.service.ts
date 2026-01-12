@@ -52,12 +52,14 @@ export type CreateContentDto = {
   categoryId: string;
   description?: string;
   audioFile: File;
+  duration?: string;
 };
 
 export type UpdateContentDto = Partial<Omit<CreateContentDto, "audioFile">> & {
   audioFile?: File;
   status?: "Published" | "Draft" | "Archived";
   isFeatured?: boolean;
+  duration?: string;
 };
 
 export const ContentService = {
@@ -85,6 +87,7 @@ export const ContentService = {
     formData.append("speakerId", data.speakerId);
     formData.append("categoryId", data.categoryId);
     if (data.description) formData.append("description", data.description);
+    if (data.duration) formData.append("duration", data.duration);
     formData.append("file", data.audioFile);
 
     const response = await api.post<Content>("/api/v1/content", formData, {
@@ -106,6 +109,7 @@ export const ContentService = {
       if (data.speakerId) formData.append("speakerId", data.speakerId);
       if (data.categoryId) formData.append("categoryId", data.categoryId);
       if (data.description !== undefined) formData.append("description", data.description || "");
+      if (data.duration !== undefined) formData.append("duration", data.duration || "");
       if (data.status) formData.append("status", data.status);
       if (data.isFeatured !== undefined) formData.append("isFeatured", data.isFeatured.toString());
       if (data.audioFile) formData.append("file", data.audioFile);

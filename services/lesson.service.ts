@@ -18,12 +18,14 @@ export type CreateLessonDto = {
   lessonTitle?: string;
   orderIndex: number;
   file: File;
+  duration?: string;
 };
 
 export type UpdateLessonDto = {
   lessonTitle?: string;
   orderIndex?: number;
   file?: File;
+  duration?: string;
 };
 
 export const LessonService = {
@@ -32,6 +34,7 @@ export const LessonService = {
     formData.append("courseId", data.courseId);
     formData.append("orderIndex", data.orderIndex.toString());
     if (data.lessonTitle) formData.append("lessonTitle", data.lessonTitle);
+    if (data.duration) formData.append("duration", data.duration);
     formData.append("file", data.file);
 
     const response = await api.post<Lesson>("/api/v1/course-lesson", formData, {
@@ -46,6 +49,7 @@ export const LessonService = {
     const formData = new FormData();
     if (data.lessonTitle !== undefined) formData.append("lessonTitle", data.lessonTitle || "");
     if (data.orderIndex !== undefined) formData.append("orderIndex", data.orderIndex.toString());
+    if (data.duration !== undefined) formData.append("duration", data.duration || "");
     if (data.file) formData.append("file", data.file);
 
     const response = await api.patch<Lesson>(`/api/v1/course-lesson/${id}`, formData, {

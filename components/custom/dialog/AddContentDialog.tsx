@@ -51,6 +51,11 @@ const lectureSchema = z.object({
     .trim()
     .max(1000, "Description must be less than 1000 characters")
     .optional(),
+  duration: z
+    .string()
+    .trim()
+    .regex(/^(\d{1,2}:)?\d{1,2}:\d{2}$/, "Duration must be in format MM:SS or HH:MM:SS (e.g., 30:00 or 1:30:00)")
+    .optional(),
 });
 
 type LectureFormValues = z.infer<typeof lectureSchema>;
@@ -78,6 +83,7 @@ export function AddContentDialog({
       categoryId: "",
       audioFile: new File([], ""),
       description: "",
+      duration: "",
     },
   });
 
@@ -89,6 +95,7 @@ export function AddContentDialog({
         categoryId: data.categoryId,
         description: data.description,
         audioFile: data.audioFile,
+        duration: data.duration,
       },
       {
         onSuccess: () => {
@@ -242,6 +249,24 @@ export function AddContentDialog({
                       placeholder="Brief description of the lecture content..."
                       className="bg-background border-border text-foreground resize-none"
                       rows={3}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="duration"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">Duration</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="30:00 or 1:30:00"
+                      className="bg-background border-border text-foreground"
                       {...field}
                     />
                   </FormControl>

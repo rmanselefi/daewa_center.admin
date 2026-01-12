@@ -27,6 +27,11 @@ const lessonSchema = z.object({
   lessonTitle: z.string().optional(),
   audioFile: z.instanceof(File, { message: "Audio file is required" }),
   orderIndex: z.number().min(1, "Order must be at least 1"),
+  duration: z
+    .string()
+    .trim()
+    .regex(/^(\d{1,2}:)?\d{1,2}:\d{2}$/, "Duration must be in format MM:SS or HH:MM:SS (e.g., 30:00 or 1:30:00)")
+    .optional(),
 });
 
 type LessonFormData = z.infer<typeof lessonSchema>;
@@ -47,6 +52,7 @@ export function AddLessonDialog({ open, onOpenChange, courseId, onSuccess }: Add
     defaultValues: {
       lessonTitle: "",
       orderIndex: 1,
+      duration: "",
     },
   });
 
@@ -57,6 +63,7 @@ export function AddLessonDialog({ open, onOpenChange, courseId, onSuccess }: Add
         lessonTitle: data.lessonTitle,
         orderIndex: data.orderIndex,
         file: data.audioFile,
+        duration: data.duration,
       });
       form.reset();
       setSelectedFile(null);
@@ -160,6 +167,24 @@ export function AddLessonDialog({ open, onOpenChange, courseId, onSuccess }: Add
                       onBlur={field.onBlur}
                       name={field.name}
                       ref={field.ref}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="duration"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">Duration</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="30:00 or 1:30:00"
+                      className="bg-secondary border-border"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />

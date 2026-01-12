@@ -49,6 +49,11 @@ const lectureSchema = z.object({
     .max(1000, "Description must be less than 1000 characters")
     .optional(),
   status: z.enum(["Published", "Draft", "Archived"]).optional(),
+  duration: z
+    .string()
+    .trim()
+    .regex(/^(\d{1,2}:)?\d{1,2}:\d{2}$/, "Duration must be in format MM:SS or HH:MM:SS (e.g., 30:00 or 1:30:00)")
+    .optional(),
 });
 
 type LectureFormValues = z.infer<typeof lectureSchema>;
@@ -78,6 +83,7 @@ export function EditContentDialog({
       categoryId: "",
       description: "",
       status: "Draft",
+      duration: "",
     },
   });
 
@@ -89,6 +95,7 @@ export function EditContentDialog({
         categoryId: content.categoryId,
         description: content.description || "",
         status: content.status,
+        duration: content.duration || "",
       });
       setSelectedFile(null);
     }
@@ -107,6 +114,7 @@ export function EditContentDialog({
           description: data.description,
           audioFile: data.audioFile,
           status: data.status,
+          duration: data.duration,
         },
       },
       {
@@ -268,6 +276,24 @@ export function EditContentDialog({
                       placeholder="Brief description of the lecture content..."
                       className="bg-background border-border text-foreground resize-none"
                       rows={3}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="duration"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">Duration</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="30:00 or 1:30:00"
+                      className="bg-background border-border text-foreground"
                       {...field}
                     />
                   </FormControl>
