@@ -21,20 +21,23 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { AddCourseDialog } from "@/components/custom/dialog/AddCourseDialog";
+import { DeleteCourseDialog } from "@/components/custom/dialog/DeleteCourseDialog";
 import { useRouter } from "next/navigation";
 import { useCourses, useDeleteCourse } from "@/hooks/useCourses";
+import { Course } from "@/services/course.service";
 
 export default function Courses() {
   const [isAddCourseDialogOpen, setIsAddCourseDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
   const { data: courses, isLoading, error } = useCourses();
   const deleteCourseMutation = useDeleteCourse();
 
-  const handleDeleteCourse = (id: string) => {
-    if (confirm("Are you sure you want to delete this course?")) {
-      deleteCourseMutation.mutate(id);
-    }
+  const handleDeleteCourse = (course: Course) => {
+    setSelectedCourse(course);
+    setIsDeleteDialogOpen(true);
   };
 
   const filteredCourses = Array.isArray(courses) 
@@ -163,7 +166,7 @@ export default function Courses() {
                             className="cursor-pointer text-destructive"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDeleteCourse(course.id);
+                              handleDeleteCourse(course);
                             }}
                             disabled={deleteCourseMutation.isPending}
                           >
@@ -185,6 +188,15 @@ export default function Courses() {
         open={isAddCourseDialogOpen} 
         onOpenChange={setIsAddCourseDialogOpen}
         onSuccess={() => setIsAddCourseDialogOpen(false)}
+      />
+
+      <DeleteCourseDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={(open) => {
+          setIsDeleteDialogOpen(open);
+          if (!open) setSelectedCourse(null);
+        }}
+        course={selectedCourse}
       />
     </div>
   );
