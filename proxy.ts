@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+/**
+ * Proxy runs before routes are rendered. Used for auth: protect app routes
+ * and redirect unauthenticated users to /login.
+ * @see https://nextjs.org/docs/app/building-your-application/routing/middleware
+ */
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
@@ -9,7 +14,7 @@ export function proxy(req: NextRequest) {
     pathname.startsWith("/_next") ||          // JS, CSS, chunks
     pathname.startsWith("/favicon.ico") ||
     pathname.startsWith("/images") ||         // if you use /public/images
-    pathname.match(/\.(.*)$/)                 // any file with extension: .png, .jpg, .css, .js, etc.
+    pathname.match(/\.[a-z0-9]+$/i) // static files: .png, .ico, .css, .js, etc.
   ) {
     return NextResponse.next();
   }
@@ -30,11 +35,13 @@ export function proxy(req: NextRequest) {
   const isDashboard = pathname === "/dashboard";
   
   if (!isLoginPage && !token) {
+   
     // Special case: Allow dashboard access if coming from login page
     // This handles the timing issue with client-side navigation
     if (isDashboard && isComingFromLogin) {
       return NextResponse.next();
     }
+    console.log("Redirecting to login", isDashboard, isComingFromLogin);
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
@@ -46,3 +53,12 @@ export function proxy(req: NextRequest) {
   return NextResponse.next();
 }
 
+/**
+ * Matcher limits which paths invoke the proxy. Excludes API, static files,
+ * and static assets so the proxy only runs where auth is needed.
+ */
+export const config = {
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
+  ],
+};
