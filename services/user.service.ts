@@ -12,10 +12,11 @@ export type User = {
 };
 
 export type CreateUserDto = {
-  name: string;
+  fullname: string;
   email: string;
   role: "Admin" | "User";
-  password?: string; // Optional for now, maybe required for creation
+  password: string;
+  phone?: string;
 };
 
 export type UpdateUserDto = Partial<CreateUserDto> & {

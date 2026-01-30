@@ -23,6 +23,39 @@ import { Button } from "@/components/ui/button";
 import { Upload, Loader2 } from "lucide-react";
 import { useCreateLesson } from "@/hooks/useLessons";
 
+// Helper function to format duration in MM:SS or HH:MM:SS format
+const formatDuration = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+};
+
+// Helper function to get audio duration from file
+const getAudioDuration = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const audio = new Audio();
+    const url = URL.createObjectURL(file);
+    
+    audio.addEventListener('loadedmetadata', () => {
+      URL.revokeObjectURL(url);
+      const duration = formatDuration(audio.duration);
+      resolve(duration);
+    });
+    
+    audio.addEventListener('error', () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load audio file'));
+    });
+    
+    audio.src = url;
+  });
+};
+
 const lessonSchema = z.object({
   lessonTitle: z.string().optional(),
   audioFile: z.instanceof(File, { message: "Audio file is required" }),
@@ -45,6 +78,7 @@ interface AddLessonDialogProps {
 
 export function AddLessonDialog({ open, onOpenChange, courseId, onSuccess }: AddLessonDialogProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isCalculatingDuration, setIsCalculatingDuration] = useState(false);
   const createLessonMutation = useCreateLesson();
 
   const form = useForm<LessonFormData>({
@@ -125,11 +159,23 @@ export function AddLessonDialog({ open, onOpenChange, courseId, onSuccess }: Add
                           name={field.name}
                           ref={field.ref}
                           onBlur={field.onBlur}
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (file) {
                               field.onChange(file);
                               setSelectedFile(file);
+                              
+                              // Calculate duration automatically
+                              setIsCalculatingDuration(true);
+                              try {
+                                const duration = await getAudioDuration(file);
+                                form.setValue('duration', duration);
+                              } catch (error) {
+                                console.error('Failed to calculate audio duration:', error);
+                                // Don't set duration if calculation fails
+                              } finally {
+                                setIsCalculatingDuration(false);
+                              }
                             }
                           }}
                         />
@@ -141,6 +187,11 @@ export function AddLessonDialog({ open, onOpenChange, courseId, onSuccess }: Add
                           <span className="text-xs">
                             ({(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)
                           </span>
+                          {isCalculatingDuration && (
+                            <span className="text-xs text-primary ml-auto">
+                              Calculating duration...
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -179,12 +230,13 @@ export function AddLessonDialog({ open, onOpenChange, courseId, onSuccess }: Add
               name="duration"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-foreground">Duration</FormLabel>
+                  <FormLabel className="text-foreground">Duration {isCalculatingDuration && "(calculating...)"}</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="30:00 or 1:30:00"
                       className="bg-secondary border-border"
                       {...field}
+                      disabled={isCalculatingDuration}
                     />
                   </FormControl>
                   <FormMessage />

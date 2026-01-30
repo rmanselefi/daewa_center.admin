@@ -17,6 +17,7 @@ interface DeleteLessonDialogProps {
   onOpenChange: (open: boolean) => void;
   lesson: Lesson | null;
   courseId: string;
+  onSuccess?: () => void;
 }
 
 export function DeleteLessonDialog({
@@ -24,6 +25,7 @@ export function DeleteLessonDialog({
   onOpenChange,
   lesson,
   courseId,
+  onSuccess,
 }: DeleteLessonDialogProps) {
   const { mutate: deleteLesson, isPending } = useDeleteLesson();
 
@@ -35,6 +37,7 @@ export function DeleteLessonDialog({
       {
         onSuccess: () => {
           onOpenChange(false);
+          onSuccess?.();
         },
       }
     );

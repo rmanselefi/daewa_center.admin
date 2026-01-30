@@ -26,7 +26,7 @@ export default function CourseDetails() {
   const [isDeleteLessonDialogOpen, setIsDeleteLessonDialogOpen] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   
-  const { data: course, isLoading, error } = useCourse(id || "");
+  const { data: course, isLoading, error, refetch } = useCourse(id || "");
 
   if (isLoading) {
     return (
@@ -215,7 +215,10 @@ export default function CourseDetails() {
         open={isAddLessonDialogOpen} 
         onOpenChange={setIsAddLessonDialogOpen}
         courseId={id || ""}
-        onSuccess={() => setIsAddLessonDialogOpen(false)}
+        onSuccess={async () => {
+          setIsAddLessonDialogOpen(false);
+          await refetch();
+        }}
       />
 
       <EditLessonDialog 
@@ -225,9 +228,10 @@ export default function CourseDetails() {
           if (!open) setSelectedLesson(null);
         }}
         lesson={selectedLesson}
-        onSuccess={() => {
+        onSuccess={async () => {
           setIsEditLessonDialogOpen(false);
           setSelectedLesson(null);
+          await refetch();
         }}
       />
 
@@ -239,6 +243,9 @@ export default function CourseDetails() {
         }}
         lesson={selectedLesson}
         courseId={id || ""}
+        onSuccess={async () => {
+          await refetch();
+        }}
       />
     </div>
   );

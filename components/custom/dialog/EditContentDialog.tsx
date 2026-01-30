@@ -34,6 +34,39 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { Content } from "@/services/content.service";
 
+// Helper function to format duration in MM:SS or HH:MM:SS format
+const formatDuration = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  }
+  return `${minutes}:${secs.toString().padStart(2, "0")}`;
+};
+
+// Helper function to get audio duration from file
+const getAudioDuration = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const audio = new Audio();
+    const url = URL.createObjectURL(file);
+
+    audio.addEventListener("loadedmetadata", () => {
+      URL.revokeObjectURL(url);
+      const duration = formatDuration(audio.duration);
+      resolve(duration);
+    });
+
+    audio.addEventListener("error", () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to load audio file"));
+    });
+
+    audio.src = url;
+  });
+};
+
 const lectureSchema = z.object({
   title: z
     .string()
@@ -74,6 +107,7 @@ export function EditContentDialog({
   const { data: categories } = useCategories();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isCalculatingDuration, setIsCalculatingDuration] = useState(false);
 
   const form = useForm<LectureFormValues>({
     resolver: zodResolver(lectureSchema),
@@ -227,7 +261,7 @@ export function EditContentDialog({
             <FormField
               control={form.control}
               name="audioFile"
-              render={({ field: { onChange, value, ...field } }) => (
+              render={({ field: { onChange, value: _value, ...fieldRest } }) => (
                 <FormItem>
                   <FormLabel className="text-foreground">
                     Audio File (Optional)
@@ -238,19 +272,31 @@ export function EditContentDialog({
                         type="file"
                         accept="audio/*"
                         className="bg-background border-border text-foreground file:text-foreground"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
                             setSelectedFile(file);
                             onChange(file);
+
+                            // Calculate duration automatically
+                            setIsCalculatingDuration(true);
+                            try {
+                              const duration = await getAudioDuration(file);
+                              form.setValue("duration", duration);
+                            } catch (error) {
+                              console.error("Failed to calculate audio duration:", error);
+                            } finally {
+                              setIsCalculatingDuration(false);
+                            }
                           }
                         }}
-                        {...field}
+                        {...fieldRest}
                       />
                       {selectedFile && (
                         <p className="text-sm text-muted-foreground">
                           New file: {selectedFile.name} (
                           {(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                          {isCalculatingDuration && " — calculating duration..."}
                         </p>
                       )}
                       {!selectedFile && content.audioUrl && (
