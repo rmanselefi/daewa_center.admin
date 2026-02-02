@@ -20,10 +20,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { AddCourseDialog } from "@/components/custom/dialog/AddCourseDialog";
 import { DeleteCourseDialog } from "@/components/custom/dialog/DeleteCourseDialog";
 import { useRouter } from "next/navigation";
-import { useCourses, useDeleteCourse } from "@/hooks/useCourses";
+import { useCourses, useDeleteCourse, useUpdateCourse } from "@/hooks/useCourses";
 import { Course } from "@/services/course.service";
 
 export default function Courses() {
@@ -34,6 +35,14 @@ export default function Courses() {
   const router = useRouter();
   const { data: courses, isLoading, error } = useCourses();
   const deleteCourseMutation = useDeleteCourse();
+  const updateCourseMutation = useUpdateCourse();
+
+  const togglePublished = (id: string, currentPublished: boolean) => {
+    updateCourseMutation.mutate({
+      id,
+      data: { isPublished: !currentPublished },
+    });
+  };
 
   const handleDeleteCourse = (course: Course) => {
     setSelectedCourse(course);
@@ -124,18 +133,31 @@ export default function Courses() {
                       <Badge variant="secondary">{course.category?.name || "N/A"}</Badge>
                     </TableCell>
                     <TableCell className="text-foreground">{course.lessonsCount || 0} lessons</TableCell>
-                    <TableCell>
-                      <span 
-                        className={`px-2 py-1 rounded-full text-xs ${
-                          course.status === 'Published' 
-                            ? 'bg-green-500/20 text-green-400' 
-                            : course.status === 'Draft'
-                            ? 'bg-yellow-500/20 text-yellow-400'
-                            : 'bg-gray-500/20 text-gray-400'
-                        }`}
-                      >
-                        {course.status}
-                      </span>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={course.isPublished ?? course.status === "Published"}
+                          onCheckedChange={() =>
+                            togglePublished(
+                              course.id,
+                              course.isPublished ?? course.status === "Published"
+                            )
+                          }
+                          disabled={updateCourseMutation.isPending}
+                          aria-label={`Toggle published for ${course.title}`}
+                        />
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            course.status === "Published"
+                              ? "bg-green-500/20 text-green-400"
+                              : course.status === "Draft"
+                              ? "bg-yellow-500/20 text-yellow-400"
+                              : "bg-gray-500/20 text-gray-400"
+                          }`}
+                        >
+                          {course.status}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-foreground">
                       {course.createdAt ? new Date(course.createdAt).toLocaleDateString() : "N/A"}
